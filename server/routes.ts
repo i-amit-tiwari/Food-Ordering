@@ -253,7 +253,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Payment route (Stripe integration)
   app.post("/api/payment", isAuthenticated, async (req, res) => {
+    console.log("Payment API called with body:", req.body);
+    
     if (!ensureUser(req)) {
+      console.log("User not authenticated in payment endpoint");
       return res.status(401).json({ message: "Unauthorized" });
     }
     
@@ -261,8 +264,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { amount } = req.body;
       
       if (!amount || amount <= 0) {
+        console.log("Invalid amount in payment request:", amount);
         return res.status(400).json({ message: "Invalid amount" });
       }
+      
+      console.log(`Creating payment intent for user ${req.user.id} with amount ${amount}`);
       
       // Create a payment intent
       const paymentIntent = await stripe.paymentIntents.create({
@@ -273,6 +279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
       
+      console.log("Payment intent created successfully:", paymentIntent.id);
       res.json({ clientSecret: paymentIntent.client_secret });
     } catch (error) {
       console.error("Stripe error:", error);

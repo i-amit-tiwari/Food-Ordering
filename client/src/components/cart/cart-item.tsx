@@ -24,9 +24,9 @@ export function CartItem({ item }: CartItemProps) {
   };
   
   return (
-    <div className="flex items-center py-4 border-b border-neutral-200">
+    <div className="flex items-center py-4 border-b border-neutral-200" data-cart="true">
       <img
-        src={menuItem.imageUrl}
+        src={menuItem.imageUrl || ''}
         alt={menuItem.name}
         className="w-16 h-16 object-cover rounded-lg"
       />
@@ -36,17 +36,25 @@ export function CartItem({ item }: CartItemProps) {
       </div>
       <div className="flex items-center">
         <button
-          onClick={handleDecrement}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDecrement();
+          }}
           className="text-neutral-500 hover:text-neutral-700 bg-neutral-100 rounded-full p-1"
           aria-label={quantity === 1 ? "Remove item" : "Decrease quantity"}
+          data-cart="true"
         >
           {quantity === 1 ? <Trash2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
         </button>
         <span className="mx-2 text-neutral-900 font-medium">{quantity}</span>
         <button
-          onClick={handleIncrement}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleIncrement();
+          }}
           className="text-neutral-500 hover:text-neutral-700 bg-neutral-100 rounded-full p-1"
           aria-label="Increase quantity"
+          data-cart="true"
         >
           <Plus className="h-4 w-4" />
         </button>
