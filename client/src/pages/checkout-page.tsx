@@ -11,7 +11,11 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 
 // Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || "pk_test_TYooMQauvdEDq54NiTphI7jx");
+const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+if (!stripePublicKey) {
+  console.error("VITE_STRIPE_PUBLIC_KEY environment variable is not set");
+}
+const stripePromise = loadStripe(stripePublicKey || "");
 
 export default function CheckoutPage() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);

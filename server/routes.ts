@@ -12,9 +12,12 @@ import {
 } from "@shared/schema";
 
 // Initialize Stripe
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "sk_test_your_test_key";
-const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: "2023-10-16",
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeSecretKey) {
+  console.error("STRIPE_SECRET_KEY environment variable is not set");
+}
+const stripe = new Stripe(stripeSecretKey || "", {
+  apiVersion: "2023-10-16" as any, // Type assertion to avoid version mismatch error
 });
 
 // Authentication middleware
@@ -25,9 +28,14 @@ function isAuthenticated(req: Request, res: Response, next: Function) {
   res.status(401).json({ message: "Unauthorized" });
 }
 
+// Type guard to check if user exists and has required properties
+function ensureUser(req: Request): req is Request & { user: Express.User } {
+  return req.isAuthenticated() && !!req.user;
+}
+
 // Admin authorization middleware
 function isAdmin(req: Request, res: Response, next: Function) {
-  if (req.isAuthenticated() && req.user.isAdmin) {
+  if (ensureUser(req) && req.user.isAdmin) {
     return next();
   }
   res.status(403).json({ message: "Forbidden: Admin access required" });
@@ -94,6 +102,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Cart routes
   app.get("/api/cart", isAuthenticated, async (req, res) => {
+    if (!ensureUser(req)) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
     try {
       const cartItems = await storage.getCartItemsWithDetails(req.user.id);
       res.json(cartItems);
@@ -103,6 +115,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/cart", isAuthenticated, async (req, res) => {
+    if (!ensureUser(req)) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
     try {
       const validatedData = insertCartItemSchema.parse({
         ...req.body,
@@ -120,6 +136,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/cart/:id", isAuthenticated, async (req, res) => {
+    if (!ensureUser(req)) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
     try {
       const id = parseInt(req.params.id);
       const success = await storage.removeFromCart(id, req.user.id);
@@ -133,6 +153,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/cart/:id", isAuthenticated, async (req, res) => {
+    if (!ensureUser(req)) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
     try {
       const id = parseInt(req.params.id);
       const { quantity } = req.body;
@@ -154,6 +178,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Order routes
   app.post("/api/orders", isAuthenticated, async (req, res) => {
+    if (!ensureUser(req)) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
     try {
       const validatedData = insertOrderSchema.parse({
         ...req.body,
@@ -175,6 +203,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/orders/:userId", isAuthenticated, async (req, res) => {
+    if (!ensureUser(req)) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
     try {
       const userId = parseInt(req.params.userId);
       
@@ -221,6 +253,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Payment route (Stripe integration)
   app.post("/api/payment", isAuthenticated, async (req, res) => {
+    if (!ensureUser(req)) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
     try {
       const { amount } = req.body;
       
