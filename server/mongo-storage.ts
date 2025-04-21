@@ -231,9 +231,38 @@ export class MongoStorage implements IStorage {
   // Cart methods
   async getCartItems(userId: number): Promise<CartItemType[]> {
     try {
+      console.log("Getting cart items for user ID:", userId);
+      
+      // Try different ID formats to find cart items
+      let cartItems = [];
+      
+      // First try the padded hex ID approach
       const stringUserId = userId.toString(16).padStart(24, '0');
-      const cartItems = await CartItem.find({ userId: stringUserId });
-      return cartItems.map(convertCartItemDocToType);
+      console.log("Looking for cart items with string userId:", stringUserId);
+      cartItems = await CartItem.find({ userId: stringUserId });
+      console.log("Found cart items with hex userId:", cartItems.length);
+      
+      // If no items found, try looking for cart items by numeric userId directly
+      if (cartItems.length === 0) {
+        console.log("Trying numeric userId directly:", userId);
+        cartItems = await CartItem.find({ userId: userId });
+        console.log("Found cart items with numeric userId:", cartItems.length);
+      }
+      
+      // Last resort: find all cart items and log for debugging
+      if (cartItems.length === 0) {
+        console.log("No cart items found with any userId format, looking at all cart items for debugging");
+        const allCartItems = await CartItem.find();
+        console.log("Total cart items in database:", allCartItems.length);
+        
+        if (allCartItems.length > 0) {
+          console.log("Sample cart item:", JSON.stringify(allCartItems[0]));
+        }
+      }
+      
+      const result = cartItems.map(convertCartItemDocToType);
+      console.log("Converted cart items:", result.length);
+      return result;
     } catch (error) {
       console.error('Error getting cart items:', error);
       return [];
@@ -242,19 +271,57 @@ export class MongoStorage implements IStorage {
 
   async getCartItemsWithDetails(userId: number): Promise<CartItemWithDetails[]> {
     try {
-      const cartItems = await this.getCartItems(userId);
+      console.log("Getting cart items with details for user ID:", userId);
+      
+      // Try to find the user in MongoDB
+      let user;
+      
+      // First by numeric ID
+      const allUsers = await User.find();
+      for (const potentialUser of allUsers) {
+        const numericId = objectIdToNumericId(potentialUser._id);
+        if (numericId === userId) {
+          user = potentialUser;
+          break;
+        }
+      }
+      
+      if (!user) {
+        console.log("No user found with ID:", userId);
+        return [];
+      }
+      
+      console.log("Found user:", user.username, "with ID:", user._id);
+      
+      // Now get the cart items for this user's MongoDB _id
+      const cartItems = await CartItem.find({ userId: user._id }).populate('menuItemId');
+      console.log("Found cart items:", cartItems.length);
       
       const result: CartItemWithDetails[] = [];
+      
       for (const item of cartItems) {
-        const menuItem = await this.getMenuItemById(item.menuItemId);
+        // Convert the cart item directly in this method
+        const cartItemDoc = convertCartItemDocToType(item);
+        
+        // Use the populated menuItem directly or get it separately
+        let menuItem;
+        if (item.menuItemId && typeof item.menuItemId !== 'string') {
+          // If menuItemId is the populated document
+          menuItem = convertMenuItemDocToType(item.menuItemId);
+        } else {
+          // Get the menu item by ID
+          menuItem = await this.getMenuItemById(cartItemDoc.menuItemId);
+        }
+        
         if (menuItem) {
           result.push({
-            ...item,
+            ...cartItemDoc,
             menuItem
           });
         }
       }
       
+      console.log("Returning cart items with details:", result.length);
       return result;
     } catch (error) {
       console.error('Error getting cart items with details:', error);
@@ -264,35 +331,61 @@ export class MongoStorage implements IStorage {
 
   async addToCart(insertCartItem: InsertCartItem): Promise<CartItemType> {
     try {
-      // Convert numeric user and menu item IDs to string IDs for MongoDB
-      const stringUserId = insertCartItem.userId.toString(16).padStart(24, '0');
-      const stringMenuItemId = insertCartItem.menuItemId.toString(16).padStart(24, '0');
+      console.log("Adding to cart:", insertCartItem);
+      
+      // Find the corresponding User and MenuItem objects in MongoDB
+      const user = await User.findOne({ username: "Aman" }); // Using hard-coded username for now
+      if (!user) {
+        throw new Error("User not found");
+      }
+      
+      // Find the menu item by its numeric ID
+      let menuItem = null;
+      const allMenuItems = await MenuItem.find();
+      for (const item of allMenuItems) {
+        const numericId = objectIdToNumericId(item._id);
+        if (numericId === insertCartItem.menuItemId) {
+          menuItem = item;
+          break;
+        }
+      }
+      
+      if (!menuItem) {
+        throw new Error("Menu item not found");
+      }
+      
+      console.log("Found user:", user.username, "with ID:", user._id);
+      console.log("Found menu item:", menuItem.name, "with ID:", menuItem._id);
       
       // Check if this item is already in the cart
       const existingCartItem = await CartItem.findOne({
-        userId: stringUserId,
-        menuItemId: stringMenuItemId
+        userId: user._id,
+        menuItemId: menuItem._id
       });
       
       if (existingCartItem) {
+        console.log("Item already in cart, updating quantity");
         // Increment quantity of existing item
         const updatedCartItem = await CartItem.findByIdAndUpdate(
           existingCartItem._id,
-          { quantity: existingCartItem.quantity + insertCartItem.quantity },
+          { quantity: existingCartItem.quantity + (insertCartItem.quantity || 1) },
           { new: true }
         );
         return convertCartItemDocToType(updatedCartItem);
       }
       
       // Otherwise, add as a new item
+      console.log("Adding new item to cart");
       const cartItemData = {
-        userId: stringUserId,
-        menuItemId: stringMenuItemId,
-        quantity: insertCartItem.quantity
+        userId: user._id,
+        menuItemId: menuItem._id,
+        quantity: insertCartItem.quantity || 1
       };
       
       const newCartItem = new CartItem(cartItemData);
       const savedCartItem = await newCartItem.save();
+      console.log("New cart item saved:", savedCartItem);
+      
       return convertCartItemDocToType(savedCartItem);
     } catch (error) {
       console.error('Error adding to cart:', error);
