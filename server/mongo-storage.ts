@@ -334,9 +334,19 @@ export class MongoStorage implements IStorage {
       console.log("Adding to cart:", insertCartItem);
       
       // Find the corresponding User and MenuItem objects in MongoDB
-      const user = await User.findOne({ username: "Aman" }); // Using hard-coded username for now
+      // Find user by numeric ID
+      let user = null;
+      const allUsers = await User.find();
+      for (const potentialUser of allUsers) {
+        const numericId = objectIdToNumericId(potentialUser._id);
+        if (numericId === insertCartItem.userId) {
+          user = potentialUser;
+          break;
+        }
+      }
+      
       if (!user) {
-        throw new Error("User not found");
+        throw new Error(`User not found with ID: ${insertCartItem.userId}`);
       }
       
       // Find the menu item by its numeric ID
@@ -351,7 +361,7 @@ export class MongoStorage implements IStorage {
       }
       
       if (!menuItem) {
-        throw new Error("Menu item not found");
+        throw new Error(`Menu item not found with ID: ${insertCartItem.menuItemId}`);
       }
       
       console.log("Found user:", user.username, "with ID:", user._id);
@@ -395,12 +405,27 @@ export class MongoStorage implements IStorage {
 
   async removeFromCart(id: number, userId: number): Promise<boolean> {
     try {
+      // Find user by numeric ID
+      let user = null;
+      const allUsers = await User.find();
+      for (const potentialUser of allUsers) {
+        const numericId = objectIdToNumericId(potentialUser._id);
+        if (numericId === userId) {
+          user = potentialUser;
+          break;
+        }
+      }
+      
+      if (!user) {
+        throw new Error(`User not found with ID: ${userId}`);
+      }
+      
+      // Find the cart item by ID
       const stringId = id.toString(16).padStart(24, '0');
-      const stringUserId = userId.toString(16).padStart(24, '0');
       
       const result = await CartItem.findOneAndDelete({
         _id: stringId,
-        userId: stringUserId
+        userId: user._id
       });
       
       return !!result;
@@ -412,11 +437,26 @@ export class MongoStorage implements IStorage {
 
   async updateCartItemQuantity(id: number, userId: number, quantity: number): Promise<CartItemType | undefined> {
     try {
+      // Find user by numeric ID
+      let user = null;
+      const allUsers = await User.find();
+      for (const potentialUser of allUsers) {
+        const numericId = objectIdToNumericId(potentialUser._id);
+        if (numericId === userId) {
+          user = potentialUser;
+          break;
+        }
+      }
+      
+      if (!user) {
+        throw new Error(`User not found with ID: ${userId}`);
+      }
+      
+      // Find the cart item by ID
       const stringId = id.toString(16).padStart(24, '0');
-      const stringUserId = userId.toString(16).padStart(24, '0');
       
       const updatedCartItem = await CartItem.findOneAndUpdate(
-        { _id: stringId, userId: stringUserId },
+        { _id: stringId, userId: user._id },
         { quantity },
         { new: true }
       );
@@ -430,8 +470,22 @@ export class MongoStorage implements IStorage {
 
   async clearCart(userId: number): Promise<boolean> {
     try {
-      const stringUserId = userId.toString(16).padStart(24, '0');
-      await CartItem.deleteMany({ userId: stringUserId });
+      // Find user by numeric ID
+      let user = null;
+      const allUsers = await User.find();
+      for (const potentialUser of allUsers) {
+        const numericId = objectIdToNumericId(potentialUser._id);
+        if (numericId === userId) {
+          user = potentialUser;
+          break;
+        }
+      }
+      
+      if (!user) {
+        throw new Error(`User not found with ID: ${userId}`);
+      }
+      
+      await CartItem.deleteMany({ userId: user._id });
       return true;
     } catch (error) {
       console.error('Error clearing cart:', error);
