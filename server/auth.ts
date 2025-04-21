@@ -6,6 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import { User as MongoUser } from "./mongo-db";
 
 declare global {
   namespace Express {
@@ -59,12 +60,41 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  passport.serializeUser((user, done) => done(null, user.id));
-  passport.deserializeUser(async (id: number, done) => {
+  passport.serializeUser((user: any, done) => {
+    // Convert ObjectId to string if it's a MongoDB document
+    const userId = user._id ? user._id.toString() : user.id;
+    done(null, userId);
+  });
+  
+  passport.deserializeUser(async (id: string | number, done) => {
     try {
-      const user = await storage.getUser(id);
+      // If the ID is a string (MongoDB ObjectId), we need to find user by MongoDB ID
+      if (typeof id === 'string' && id.length === 24) {
+        // This is likely a MongoDB ObjectId
+        try {
+          const mongoUser = await MongoUser.findById(id);
+          if (mongoUser) {
+            // Convert to our application user format
+            const appUser = {
+              id: Number(mongoUser._id.toString().substring(mongoUser._id.toString().length - 6), 16),
+              username: mongoUser.username,
+              password: mongoUser.password,
+              name: mongoUser.name,
+              email: mongoUser.email,
+              isAdmin: mongoUser.isAdmin
+            };
+            return done(null, appUser);
+          }
+        } catch (mongoError) {
+          console.error('MongoDB lookup error:', mongoError);
+        }
+      }
+      
+      // Fall back to regular storage lookup
+      const user = await storage.getUser(Number(id));
       done(null, user);
     } catch (error) {
+      console.error('User deserialization error:', error);
       done(error);
     }
   });
