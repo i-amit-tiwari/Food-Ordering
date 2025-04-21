@@ -32,9 +32,17 @@ import {
 const MemoryStore = createMemoryStore(session);
 
 // Utility functions to convert between MongoDB documents and our application types
+// Helper function to convert MongoDB ObjectId to a numeric ID
+function objectIdToNumericId(objectId: any): number {
+  if (!objectId) return 0;
+  const idStr = objectId.toString();
+  // Take the last 6 characters of the ObjectId and convert to a number
+  return parseInt(idStr.substring(idStr.length - 6), 16);
+}
+
 function convertUserDocToType(doc: UserDocument): UserType {
   return {
-    id: Number(doc._id.toString().substring(doc._id.toString().length - 6), 16),
+    id: objectIdToNumericId(doc._id),
     username: doc.username,
     password: doc.password,
     name: doc.name,
@@ -45,7 +53,7 @@ function convertUserDocToType(doc: UserDocument): UserType {
 
 function convertMenuItemDocToType(doc: MenuItemDocument): MenuItemType {
   return {
-    id: Number(doc._id.toString().substring(doc._id.toString().length - 6), 16),
+    id: objectIdToNumericId(doc._id),
     name: doc.name,
     description: doc.description,
     price: doc.price,
@@ -58,17 +66,17 @@ function convertMenuItemDocToType(doc: MenuItemDocument): MenuItemType {
 
 function convertCartItemDocToType(doc: CartItemDocument): CartItemType {
   return {
-    id: Number(doc._id.toString().substring(doc._id.toString().length - 6), 16),
-    userId: Number(doc.userId.toString().substring(doc.userId.toString().length - 6), 16),
-    menuItemId: Number(doc.menuItemId.toString().substring(doc.menuItemId.toString().length - 6), 16),
+    id: objectIdToNumericId(doc._id),
+    userId: objectIdToNumericId(doc.userId),
+    menuItemId: objectIdToNumericId(doc.menuItemId),
     quantity: doc.quantity
   };
 }
 
 function convertOrderDocToType(doc: OrderDocument): OrderType {
   return {
-    id: Number(doc._id.toString().substring(doc._id.toString().length - 6), 16),
-    userId: Number(doc.userId.toString().substring(doc.userId.toString().length - 6), 16),
+    id: objectIdToNumericId(doc._id),
+    userId: objectIdToNumericId(doc.userId),
     items: doc.items,
     status: doc.status,
     total: doc.total,

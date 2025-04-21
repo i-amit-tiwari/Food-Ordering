@@ -63,27 +63,33 @@ export function setupAuth(app: Express) {
   passport.serializeUser((user: any, done) => {
     // Convert ObjectId to string if it's a MongoDB document
     const userId = user._id ? user._id.toString() : user.id;
+    console.log("Serializing user with ID:", userId);
     done(null, userId);
   });
   
   passport.deserializeUser(async (id: string | number, done) => {
     try {
+      console.log("Deserializing user with ID:", id);
       // If the ID is a string (MongoDB ObjectId), we need to find user by MongoDB ID
       if (typeof id === 'string' && id.length === 24) {
         // This is likely a MongoDB ObjectId
         try {
+          console.log("Looking up MongoDB user by ID:", id);
           const mongoUser = await MongoUser.findById(id);
           if (mongoUser) {
-            // Convert to our application user format
+            console.log("Found MongoDB user:", mongoUser.username);
+            // Convert to our application user format using the helper function
             const appUser = {
-              id: Number(mongoUser._id.toString().substring(mongoUser._id.toString().length - 6), 16),
+              id: parseInt(mongoUser._id.toString().substring(mongoUser._id.toString().length - 6), 16),
               username: mongoUser.username,
               password: mongoUser.password,
-              name: mongoUser.name,
-              email: mongoUser.email,
+              name: mongoUser.name || null,
+              email: mongoUser.email || null,
               isAdmin: mongoUser.isAdmin
             };
             return done(null, appUser);
+          } else {
+            console.log("MongoDB user not found");
           }
         } catch (mongoError) {
           console.error('MongoDB lookup error:', mongoError);
@@ -91,7 +97,9 @@ export function setupAuth(app: Express) {
       }
       
       // Fall back to regular storage lookup
+      console.log("Looking up user in storage with ID:", id);
       const user = await storage.getUser(Number(id));
+      console.log("Storage user result:", user ? "found" : "not found");
       done(null, user);
     } catch (error) {
       console.error('User deserialization error:', error);
