@@ -544,8 +544,9 @@ export class MongoStorage implements IStorage {
         const itemsWithDetails = [];
         
         for (const item of order.items) {
-          // Convert the MongoDB string ID to numeric ID for our application
-          const numericMenuItemId = Number((item.menuItemId as unknown as string).substring((item.menuItemId as unknown as string).length - 6), 16);
+          // Handle both string and ObjectId menuItemId
+          const menuItemId = item.menuItemId.toString();
+          const numericMenuItemId = parseInt(menuItemId.substring(menuItemId.length - 6), 16);
           const menuItem = await this.getMenuItemById(numericMenuItemId);
           
           if (menuItem) {
