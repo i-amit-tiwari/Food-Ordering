@@ -61,49 +61,43 @@ export function setupAuth(app: Express) {
   );
 
   passport.serializeUser((user: any, done) => {
-    // Convert ObjectId to string if it's a MongoDB document
-    const userId = user._id ? user._id.toString() : user.id;
-    console.log("Serializing user with ID:", userId);
-    done(null, userId);
+    try {
+      // The user might come from MongoDB directly or from our convertUserDocToType function
+      // If it has _id, it's a MongoDB document
+      let userId;
+      if (user._id) {
+        // It's a direct MongoDB document
+        userId = user._id.toString();
+        console.log("Serializing MongoDB document user with ID:", userId);
+      } else {
+        // It's already converted to our application format
+        userId = user.id;
+        console.log("Serializing application format user with ID:", userId);
+      }
+      done(null, userId);
+    } catch (error) {
+      console.error("Error in serializeUser:", error);
+      done(error, null);
+    }
   });
   
   passport.deserializeUser(async (id: string | number, done) => {
     try {
-      console.log("Deserializing user with ID:", id);
-      // If the ID is a string (MongoDB ObjectId), we need to find user by MongoDB ID
-      if (typeof id === 'string' && id.length === 24) {
-        // This is likely a MongoDB ObjectId
-        try {
-          console.log("Looking up MongoDB user by ID:", id);
-          const mongoUser = await MongoUser.findById(id);
-          if (mongoUser) {
-            console.log("Found MongoDB user:", mongoUser.username);
-            // Convert to our application user format using the helper function
-            const appUser = {
-              id: parseInt(mongoUser._id.toString().substring(mongoUser._id.toString().length - 6), 16),
-              username: mongoUser.username,
-              password: mongoUser.password,
-              name: mongoUser.name || null,
-              email: mongoUser.email || null,
-              isAdmin: mongoUser.isAdmin
-            };
-            return done(null, appUser);
-          } else {
-            console.log("MongoDB user not found");
-          }
-        } catch (mongoError) {
-          console.error('MongoDB lookup error:', mongoError);
-        }
-      }
+      console.log("Deserializing user with ID:", id, "Type:", typeof id);
       
-      // Fall back to regular storage lookup
-      console.log("Looking up user in storage with ID:", id);
-      const user = await storage.getUser(Number(id));
-      console.log("Storage user result:", user ? "found" : "not found");
-      done(null, user);
+      // Use the enhanced getUser method from our storage
+      const user = await storage.getUser(id);
+      
+      if (user) {
+        console.log("User found:", user.username);
+        return done(null, user);
+      } else {
+        console.log("User not found in storage");
+        return done(new Error("User not found"), null);
+      }
     } catch (error) {
       console.error('User deserialization error:', error);
-      done(error);
+      done(error, null);
     }
   });
 

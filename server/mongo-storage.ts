@@ -97,11 +97,40 @@ export class MongoStorage implements IStorage {
   }
 
   // User methods
-  async getUser(id: number): Promise<UserType | undefined> {
+  async getUser(id: number | string): Promise<UserType | undefined> {
     try {
-      // Convert numeric ID to string ID format for MongoDB lookup
-      const stringId = id.toString(16).padStart(24, '0');
-      const user = await User.findById(stringId);
+      console.log("MongoStorage getUser called with ID:", id, "Type:", typeof id);
+      
+      // Try different strategies to locate the user
+      let user;
+      
+      // 1. If it's a string and looks like a MongoDB ObjectId
+      if (typeof id === 'string' && id.length === 24) {
+        console.log("Looking up user by full MongoDB ObjectId:", id);
+        user = await User.findById(id);
+      }
+      
+      // 2. If it's a number, try the hex conversion approach
+      if (!user && typeof id === 'number') {
+        const stringId = id.toString(16).padStart(24, '0');
+        console.log("Looking up user by padded hex ID:", stringId);
+        user = await User.findById(stringId);
+      }
+      
+      // 3. If still not found, try looking up all users and find a matching numeric ID
+      if (!user) {
+        console.log("Trying to match user by numeric ID portion");
+        const allUsers = await User.find();
+        for (const potentialUser of allUsers) {
+          const numericId = objectIdToNumericId(potentialUser._id);
+          console.log("Checking user:", potentialUser.username, "with numeric ID:", numericId, "against target:", id);
+          if (numericId === Number(id)) {
+            user = potentialUser;
+            break;
+          }
+        }
+      }
+      
       return user ? convertUserDocToType(user) : undefined;
     } catch (error) {
       console.error('Error getting user:', error);
