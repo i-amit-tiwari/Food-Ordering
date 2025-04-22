@@ -454,22 +454,26 @@ export class MongoStorage implements IStorage {
         throw new Error(`User not found with ID: ${userId}`);
       }
       
-      // Find all cart items and match by numeric ID
-      const allCartItems = await CartItem.find({ userId: user._id });
-      let targetCartItem = null;
+      // Find the target cart item
+      const cartItems = await CartItem.find({ userId: user._id }).populate('menuItemId');
+      console.log("Found cart items for user:", cartItems.length);
       
-      for (const item of allCartItems) {
-        const numericId = objectIdToNumericId(item._id);
-        if (numericId === id) {
+      let targetCartItem = null;
+      for (const item of cartItems) {
+        const itemId = objectIdToNumericId(item._id);
+        console.log("Comparing cart item ID:", itemId, "with target ID:", id);
+        if (itemId === id) {
           targetCartItem = item;
           break;
         }
       }
       
       if (!targetCartItem) {
+        console.log("Cart item not found with ID:", id);
         return undefined;
       }
       
+      console.log("Updating cart item:", targetCartItem._id, "with quantity:", quantity);
       const updatedCartItem = await CartItem.findByIdAndUpdate(
         targetCartItem._id,
         { quantity },
