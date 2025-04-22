@@ -3,6 +3,22 @@
 
 QuickBite is a full-stack food delivery application built with React, Express, and MongoDB. It features a modern UI with dark mode support, user authentication, cart management, and order tracking.
 
+## How to Access This Project
+
+1. Open Replit and create a new repl
+2. Click on "Import from GitHub" 
+3. Enter the repository URL: `https://github.com/yourusername/quickbite`
+4. Once imported, install dependencies:
+   ```bash
+   npm install
+   ```
+5. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+The application will be available at the URL shown in your Replit workspace.
+
 ## Features
 
 - User authentication (login/register)
