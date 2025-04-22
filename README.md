@@ -59,13 +59,41 @@ The application will be available at the URL shown in your Replit workspace.
 1. Clone the repository
 2. Install dependencies:
    ```bash
-   npm install
+   npm install dotenv cross-env
    ```
-3. Start the development server:
+3. Create a `.env` file in the root directory with required environment variables:
+   ```
+   MONGODB_URI=your_mongodb_uri
+   JWT_SECRET=your_jwt_secret
+   NODE_ENV=development
+   ```
+4. Update package.json scripts to use cross-env:
+   ```json
+   "scripts": {
+     "dev": "cross-env NODE_ENV=development tsx server/index.ts"
+   }
+   ```
+5. Start the development server:
    ```bash
    npm run dev
    ```
-4. Open your browser and navigate to the application URL
+6. Open your browser and navigate to the application URL
+
+## Pro Tips
+
+1. Environment Variables:
+   - Use `dotenv` to manage environment variables
+   - Import it at the top of server/index.ts:
+     ```typescript
+     import 'dotenv/config';
+     ```
+   - Never commit .env files to version control
+   - Use Replit's Secrets tool for production environment variables
+
+2. Development Configuration:
+   - Use `cross-env` for consistent environment variable setting across platforms
+   - Ensure all sensitive data is stored in environment variables
+   - Check process.env values using console.log during development
 
 ## Available Scripts
 
