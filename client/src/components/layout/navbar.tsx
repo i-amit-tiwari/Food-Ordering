@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/context/cart-context";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { 
   Search,
   ShoppingCart,
@@ -87,6 +88,7 @@ export function Navbar() {
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-neutral-500" />
             </div>
             
+            <ThemeToggle />
             <button
               onClick={toggleCart}
               className="p-2 text-neutral-600 hover:text-neutral-900 relative mr-3"
