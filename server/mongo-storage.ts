@@ -420,15 +420,17 @@ export class MongoStorage implements IStorage {
         throw new Error(`User not found with ID: ${userId}`);
       }
       
-      // Find the cart item by ID
-      const stringId = id.toString(16).padStart(24, '0');
+      // Find the cart item by numeric ID
+      const allCartItems = await CartItem.find({ userId: user._id });
+      for (const item of allCartItems) {
+        const numericId = objectIdToNumericId(item._id);
+        if (numericId === id) {
+          await CartItem.findByIdAndDelete(item._id);
+          return true;
+        }
+      }
       
-      const result = await CartItem.findOneAndDelete({
-        _id: stringId,
-        userId: user._id
-      });
-      
-      return !!result;
+      return false;
     } catch (error) {
       console.error('Error removing from cart:', error);
       return false;
