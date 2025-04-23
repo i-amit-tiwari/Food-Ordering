@@ -20,6 +20,8 @@ import { eq, and } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { IStorage } from "./storage";
+import dotenv from 'dotenv';
+dotenv.config();
 
 const PostgresSessionStore = connectPg(session);
 

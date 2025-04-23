@@ -28,6 +28,8 @@ import {
   OrderWithItems,
   OrderStatus
 } from '@shared/schema';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const MemoryStore = createMemoryStore(session);
 

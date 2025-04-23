@@ -10,6 +10,8 @@ import {
   insertCartItemSchema,
   OrderStatus
 } from "@shared/schema";
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Initialize Stripe
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;

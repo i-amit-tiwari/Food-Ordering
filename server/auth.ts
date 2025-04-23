@@ -7,6 +7,8 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import { User as MongoUser } from "./mongo-db";
+import dotenv from 'dotenv';
+dotenv.config();
 
 declare global {
   namespace Express {

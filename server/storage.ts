@@ -13,6 +13,8 @@ import {
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import dotenv from 'dotenv';
+dotenv.config();
 
 const MemoryStore = createMemoryStore(session);
 
