@@ -141,6 +141,4 @@ Required environment variables:
 - `JWT_SECRET` - Secret key for JWT tokens
 - `NODE_ENV` - Environment (development/production)
 
-## Deployment
 
-The application is configured for deployment on Replit. The deployment settings are already configured in the `.replit` file.
