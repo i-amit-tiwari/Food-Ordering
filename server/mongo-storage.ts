@@ -684,7 +684,7 @@ export class MongoStorage implements IStorage {
             name: "Chicken Salad",
             description: "Fresh vegetables with grilled chicken, avocado and vinaigrette",
             price: 9.99,
-            imageUrl: "https://images.unsplash.com/photo-1532465614-6cc8d45f647f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+            imageUrl: "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcRvRGyIDdiPeQlWwTGJam3ZFtshlf_BxAXuMD8Oz_XXNjFl82_AZoFHLwLBrxWX7eatbznQKgDwKeWgX8P1TKfthIV8Jfeun4ov_sRigP9Jfno57fIIgWVa",
             category: "Salads",
             isPopular: false
           },

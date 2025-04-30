@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/context/cart-context";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import logo from "../../logoo.svg";
 import { 
   Search,
   ShoppingCart,
@@ -51,10 +52,12 @@ export function Navbar() {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <Link href="/">
-                <span className="text-primary font-bold text-xl cursor-pointer">QuickBite</span>
+                <span className="text-primary font-bold text-xl cursor-pointer"><img src={logo} alt=""  width={150}/></span>
               </Link>
             </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+            <div className="hidden sm:flex sm:ml-6 sm:space-x-8 items-center">
+
+
               <Link href="/">
                 <a className="border-primary text-neutral-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                   Menu
